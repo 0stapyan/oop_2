@@ -43,6 +43,42 @@ public:
     Rectangle(int x, int y, int width, int height) : x(x), y(y), width(width), height(height) {}
 };
 
+class UserInterface{
+private:
+    Board board;
+
+public:
+    void run(){
+
+    }
+
+private:
+    void listOfShapes(){
+
+    }
+
+    void availableShapes(){
+
+    }
+
+    void add(){
+
+    }
+
+    void undo(){
+
+    }
+
+    void save(){
+
+    }
+
+    void load(){
+
+    }
+
+};
+
 int main() {
     Board board;
     return 0;
