@@ -383,11 +383,18 @@ private:
     }
 
     void undo(){
-
+        if (!board.getShapes().empty()) {
+            board.getShapes().pop_back();
+            cout << "Last added shape removed." << endl;
+        }
+        else {
+            cout << "No shapesto undo." << endl;
+        }
     }
 
     void clear() {
-
+        board.getShapes().clear();
+        cout << "Board cleared." << endl;
     }
 
     void save(){
