@@ -215,6 +215,41 @@ private:
 
         string id = "Shape" + to_string(shapeCounter++);
 
+        if (shapeType == "triangle") {
+            int x, y, height;
+            cout << "Enter x, y, height: ";
+            cin >> x >> y >> height;
+            auto triangle = make_shared<Triangle>(id, x, y, height);
+            board.addShape(triangle);
+            cout << "Triangle added." << endl;
+        }
+        else if (shapeType == "circle") {
+            int x, y, radius;
+            cout << "Enter x, y, radius: ";
+            cin >> x >> y >> radius;
+            auto circle = make_shared<Circle>(id, x, y, radius);
+            board.addShape(circle);
+            cout << "Circle added." << endl;
+        }
+        else if (shapeType == "rectangle") {
+            int x, y, width, height;
+            cout << "Enter x, y, width, height: ";
+            cin >> x >> y >> width >> height;
+            auto rectangle = make_shared<Rectangle>(id, x, y, width, height);
+            board.addShape(rectangle);
+            cout << "Rectangle added." << endl;
+        }
+        else if (shapeType == "line") {
+            int x1, y1, x2, y2;
+            cout << "Enter x1, y1, x2, y2: ";
+            cin >> x1 >> y1 >> x2 >> y2;
+            auto line = make_shared<Line>(id, x1, y1, x2, y2);
+            board.addShape(line);
+            cout << "Line added." << endl;
+        }
+        else {
+            cout << "Invalid shape type" << endl;
+        }
     }
 
     void undo(){
