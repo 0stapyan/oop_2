@@ -29,11 +29,8 @@ public:
     }
 
     void drawBoard() {
-        for (auto& row : grid) {
-            for (char c : row) {
-                std::cout << c;
-            }
-            std::cout << "\n";
+        for (auto &row : grid) {
+            fill(row.begin(), row.end(), ' ');
         }
 
         for (const auto &shape : shapes) {
@@ -64,6 +61,30 @@ public:
     Triangle(string id, int x, int y, int height) : Shape(id), x(x), y(y), height(height) {}
 
     void draw(vector<vector<char>>& grid) const override {
+        if (height <= 0) return;
+
+        for (int i = 0; i < height; i++) {
+            int leftMost = x - i;
+            int rightMost = x + i;
+            int posY = y + i;
+
+            if (posY < BOARD_HEIGHT) {
+                if (leftMost >= 0 && leftMost < BOARD_WIDTH) {
+                    grid[posY][leftMost] = '*';
+                }
+                if (rightMost >=0 && rightMost < BOARD_WIDTH && leftMost != rightMost) {
+                    grid[posY][rightMost] = '*';
+                }
+            }
+        }
+
+        for (int j = 0; j < 2 * height - 1; j++) {
+            int baseX = x - height + 1 + j;
+            int baseY = y + height - 1;
+            if (baseX >= 0 && baseX < BOARD_WIDTH && baseY < BOARD_HEIGHT) {
+                grid[baseY][baseX] = '*';
+            }
+        }
 
     }
 
@@ -80,11 +101,43 @@ public:
     Circle(string id, int x, int y, int radius) : Shape(id), x(x), y(y), radius(radius) {}
 
     void draw(vector<vector<char>>& grid) const override {
+        int x0 = x;
+        int y0 = y;
 
+        int x = radius;
+        int y = 0;
+        int decisionOver2 = 1 - x;
+
+        while (x >= y) {
+            if (x0 + x >= 0 && x0 + x < BOARD_WIDTH && y0 + y >= 0 && y0 + y < BOARD_HEIGHT)
+                grid[y0 + y][x0 + x] = '*';
+            if (x0 + y >= 0 && x0 + y < BOARD_WIDTH && y0 + x >= 0 && y0 + x < BOARD_HEIGHT)
+                grid[y0 + x][x0 + y] = '*';
+            if (x0 - y >= 0 && x0 - y < BOARD_WIDTH && y0 + x >= 0 && y0 + x < BOARD_HEIGHT)
+                grid[y0 + x][x0 - y] = '*';
+            if (x0 - x >= 0 && x0 - x < BOARD_WIDTH && y0 + y >= 0 && y0 + y < BOARD_HEIGHT)
+                grid[y0 + y][x0 - x] = '*';
+            if (x0 - x >= 0 && x0 - x < BOARD_WIDTH && y0 - y >= 0 && y0 - y < BOARD_HEIGHT)
+                grid[y0 - y][x0 - x] = '*';
+            if (x0 - y >= 0 && x0 - y < BOARD_WIDTH && y0 - x >= 0 && y0 - x < BOARD_HEIGHT)
+                grid[y0 - x][x0 - y] = '*';
+            if (x0 + y >= 0 && x0 + y < BOARD_WIDTH && y0 - x >= 0 && y0 - x < BOARD_HEIGHT)
+                grid[y0 - x][x0 + y] = '*';
+            if (x0 + x >= 0 && x0 + x < BOARD_WIDTH && y0 - y >= 0 && y0 - y < BOARD_HEIGHT)
+                grid[y0 - y][x0 + x] = '*';
+
+            y++;
+            if (decisionOver2 <= 0) {
+                decisionOver2 += 2 * y + 1;
+            } else {
+                x--;
+                decisionOver2 += 2 * (y - x) + 1;
+            }
+        }
     }
 
     string getDescription() const override {
-        return id + "circle radius=" + to_string(radius) + " position=(" + to_string(x) + ", " + to_string(y) + ")";
+        return id + " circle radius=" + to_string(radius) + " position=(" + to_string(x) + ", " + to_string(y) + ")";
     }
 };
 
@@ -96,6 +149,33 @@ public:
     Rectangle(string id, int x, int y, int width, int height) : Shape(id), x(x), y(y), width(width), height(height) {}
 
     void draw(vector<vector<char>>& grid) const override {
+        for (int i = 0; i < width; i++) {
+            int topX = x + i;
+            int topY = y;
+            int bottomY = y + height - 1;
+            if (topX >= 0 && topX < BOARD_WIDTH) {
+                if (topY >= 0 && topY < BOARD_HEIGHT) {
+                    grid[topY][topX] = '*';
+                }
+                if (bottomY >= 0 && bottomY < BOARD_HEIGHT) {
+                    grid[bottomY][topX] = '*';
+                }
+            }
+        }
+
+        for (int j = 0; j < height; j++) {
+            int leftX = x;
+            int rightX = x + width - 1;
+            int drawY = y + j;
+            if (drawY >= 0 && drawY < BOARD_HEIGHT) {
+                if (leftX >= 0 && leftX < BOARD_WIDTH) {
+                    grid[drawY][leftX] = '*';
+                }
+                if (rightX >= 0 && rightX < BOARD_WIDTH) {
+                    grid[drawY][rightX] = '*';
+                }
+            }
+        }
 
     }
 
@@ -105,19 +185,45 @@ public:
 
 };
 
-class Line: public Shape {
+class Square : public Shape {
 private:
-    int x1, y1, x2, y2;
+    int x, y, sideLength;
 
 public:
-    Line(string id, int x1, int y1, int x2, int y2) : Shape(id), x1(x1), y1(y1), x2(x2), y2(y2) {}
+    Square(string id, int x, int y, int sideLength) : Shape(id), x(x), y(y), sideLength(sideLength) {}
 
     void draw(vector<vector<char>>& grid) const override {
+        for (int i = 0; i < sideLength; ++i) {
+            int topX = x + i;
+            int topY = y;
+            int bottomY = y + sideLength - 1;
 
+            if (topX >= 0 && topX < BOARD_WIDTH && topY >= 0 && topY < BOARD_HEIGHT) {
+                grid[topY][topX] = '*';
+            }
+
+            if (topX >= 0 && topX < BOARD_WIDTH && bottomY >= 0 && bottomY < BOARD_HEIGHT) {
+                grid[bottomY][topX] = '*';
+            }
+        }
+
+        for (int j = 0; j < sideLength; ++j) {
+            int leftX = x;
+            int rightX = x + sideLength - 1;
+            int drawY = y + j;
+
+            if (leftX >= 0 && leftX < BOARD_WIDTH && drawY >= 0 && drawY < BOARD_HEIGHT) {
+                grid[drawY][leftX] = '*';
+            }
+
+            if (rightX >= 0 && rightX < BOARD_WIDTH && drawY >= 0 && drawY < BOARD_HEIGHT) {
+                grid[drawY][rightX] = '*';
+            }
+        }
     }
 
     string getDescription() const override {
-        return id + " line from (" + to_string(x1) + ", " + to_string(y1) + ") to (" + to_string(x2) + ", " + to_string(y2) + ")";
+        return id + " square sideLength=" + to_string(sideLength) + " position=(" + to_string(x) + ", " + to_string(y) + ")";
     }
 };
 
@@ -204,13 +310,13 @@ private:
         cout << "1. Triangle - Parameters: x y height\n";
         cout << "2. Circle - Parameters: x y radius\n";
         cout << "3. Rectangle - Parameters: x y width height\n";
-        cout << "4. Line - Parameters: x1 y1 x2 y2\n";
+        cout << "4. Square - Parameters: x y sideLength\\n";
     }
 
     void add(){
         string shapeType;
-        static int shapeCounter = 0;
-        cout << "Enter shape type (triangle, circle, rectangle, line): " << endl;
+        static int shapeCounter = 1;
+        cout << "Enter shape type (triangle, circle, rectangle, square): " << endl;
         cin >> shapeType;
 
         string id = "Shape" + to_string(shapeCounter++);
@@ -219,6 +325,12 @@ private:
             int x, y, height;
             cout << "Enter x, y, height: ";
             cin >> x >> y >> height;
+
+            if (x - height < 0 || x + height >= BOARD_WIDTH || y + height >= BOARD_HEIGHT) {
+                cout << "Triangle is out of bounds! Please enter valid coordinates and height." << endl;
+                return;
+            }
+
             auto triangle = make_shared<Triangle>(id, x, y, height);
             board.addShape(triangle);
             cout << "Triangle added." << endl;
@@ -227,6 +339,12 @@ private:
             int x, y, radius;
             cout << "Enter x, y, radius: ";
             cin >> x >> y >> radius;
+
+            if (x - radius < 0 || x + radius >= BOARD_WIDTH || y - radius < 0 || y + radius >= BOARD_HEIGHT) {
+                cout << "Circle is out of bounds! Please enter valid coordinates and radius." << endl;
+                return;
+            }
+
             auto circle = make_shared<Circle>(id, x, y, radius);
             board.addShape(circle);
             cout << "Circle added." << endl;
@@ -235,17 +353,29 @@ private:
             int x, y, width, height;
             cout << "Enter x, y, width, height: ";
             cin >> x >> y >> width >> height;
+
+            if (x < 0 || x + width >= BOARD_WIDTH || y < 0 || y + height >= BOARD_HEIGHT) {
+                cout << "Rectangle is out of bounds! Please enter valid coordinates and dimensions." << endl;
+                return;
+            }
+
             auto rectangle = make_shared<Rectangle>(id, x, y, width, height);
             board.addShape(rectangle);
             cout << "Rectangle added." << endl;
         }
-        else if (shapeType == "line") {
-            int x1, y1, x2, y2;
-            cout << "Enter x1, y1, x2, y2: ";
-            cin >> x1 >> y1 >> x2 >> y2;
-            auto line = make_shared<Line>(id, x1, y1, x2, y2);
-            board.addShape(line);
-            cout << "Line added." << endl;
+        else if (shapeType == "square") {
+            int x, y, sideLength;
+            cout << "Enter x, y, sideLength: ";
+            cin >> x >> y >> sideLength;
+
+            if (x < 0 || x + sideLength >= BOARD_WIDTH || y < 0 || y + sideLength >= BOARD_HEIGHT) {
+                cout << "Square is out of bounds! Please enter valid coordinates and side length." << endl;
+                return;
+            }
+
+            auto square = make_shared<Square>(id, x, y, sideLength);
+            board.addShape(square);
+            cout << "Square added." << endl;
         }
         else {
             cout << "Invalid shape type" << endl;
