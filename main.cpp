@@ -1,4 +1,6 @@
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <vector>
 using namespace std;
 
@@ -26,6 +28,10 @@ public:
 
     vector<shared_ptr<Shape>>& getShapes() {
         return shapes;
+    }
+
+    vector<vector<char>>& getGrid() {
+        return grid;
     }
 
     void drawBoard() {
@@ -89,7 +95,7 @@ public:
     }
 
     string getDescription() const override {
-        return id + " triangle height=" + to_string(height) + " position=(" + to_string(x) + ", " + to_string(y) + ")";
+        return id + " triangle " + to_string(height) + " " + to_string(x) + " " + to_string(y) + " ";
     }
 };
 
@@ -137,7 +143,7 @@ public:
     }
 
     string getDescription() const override {
-        return id + " circle radius=" + to_string(radius) + " position=(" + to_string(x) + ", " + to_string(y) + ")";
+        return id + " circle " + to_string(radius) + " " + to_string(x) + " " + to_string(y) + " ";
     }
 };
 
@@ -180,7 +186,7 @@ public:
     }
 
     string getDescription() const override {
-        return id + " rectangle width=" + to_string(width) + " height=" + to_string(height) + " position=(" + to_string(x) + ", " + to_string(y) + ")";
+        return id + " " + to_string(width) + " " + to_string(height) + " " + to_string(x) + " " + to_string(y) + " ";
     }
 
 };
@@ -223,29 +229,29 @@ public:
     }
 
     string getDescription() const override {
-        return id + " square sideLength=" + to_string(sideLength) + " position=(" + to_string(x) + ", " + to_string(y) + ")";
+        return id + " square " + to_string(sideLength) + " " + to_string(x) + " " + to_string(y) + " ";
     }
 };
 
-class UserInterface{
+class UserInterface {
 private:
     Board board;
 
 public:
-    void run(){
+    void run() {
         string command;
         cout << """Welcome to the Shapes Blackboard. Choose the command from the list:\n"
-                  "1. draw\n"
-                  "2. list\n"
-                  "3. shapes\n"
-                  "4. add\n"
-                  "5. undo\n"
-                  "6. clear\n"
-                  "7. save\n"
-                  "8. load\n"
-                  "9. exit\n""" << endl;
+                "1. draw\n"
+                "2. list\n"
+                "3. shapes\n"
+                "4. add\n"
+                "5. undo\n"
+                "6. clear\n"
+                "7. save\n"
+                "8. load\n"
+                "9. exit\n""" << endl;
 
-        while (true){
+        while (true) {
             cout << ">" << endl;
             getline(cin, command);
 
@@ -286,7 +292,7 @@ public:
                     load();
                     break;
                 case 9:
-                    break;
+                    return;
             }
         }
 
@@ -298,9 +304,9 @@ private:
     }
 
 
-    void listOfShapes(){
+    void listOfShapes() {
         cout << "List of shapes:" << endl;
-        for (const auto& shape : board.getShapes()) {
+        for (const auto &shape: board.getShapes()) {
             cout << shape->getDescription() << endl;
         }
     }
@@ -313,7 +319,7 @@ private:
         cout << "4. Square - Parameters: x y sideLength\\n";
     }
 
-    void add(){
+    void add() {
         string shapeType;
         static int shapeCounter = 1;
         cout << "Enter shape type (triangle, circle, rectangle, square): " << endl;
@@ -334,8 +340,7 @@ private:
             auto triangle = make_shared<Triangle>(id, x, y, height);
             board.addShape(triangle);
             cout << "Triangle added." << endl;
-        }
-        else if (shapeType == "circle") {
+        } else if (shapeType == "circle") {
             int x, y, radius;
             cout << "Enter x, y, radius: ";
             cin >> x >> y >> radius;
@@ -348,8 +353,7 @@ private:
             auto circle = make_shared<Circle>(id, x, y, radius);
             board.addShape(circle);
             cout << "Circle added." << endl;
-        }
-        else if (shapeType == "rectangle") {
+        } else if (shapeType == "rectangle") {
             int x, y, width, height;
             cout << "Enter x, y, width, height: ";
             cin >> x >> y >> width >> height;
@@ -362,8 +366,7 @@ private:
             auto rectangle = make_shared<Rectangle>(id, x, y, width, height);
             board.addShape(rectangle);
             cout << "Rectangle added." << endl;
-        }
-        else if (shapeType == "square") {
+        } else if (shapeType == "square") {
             int x, y, sideLength;
             cout << "Enter x, y, sideLength: ";
             cin >> x >> y >> sideLength;
@@ -376,18 +379,16 @@ private:
             auto square = make_shared<Square>(id, x, y, sideLength);
             board.addShape(square);
             cout << "Square added." << endl;
-        }
-        else {
+        } else {
             cout << "Invalid shape type" << endl;
         }
     }
 
-    void undo(){
+    void undo() {
         if (!board.getShapes().empty()) {
             board.getShapes().pop_back();
             cout << "Last added shape removed." << endl;
-        }
-        else {
+        } else {
             cout << "No shapesto undo." << endl;
         }
     }
@@ -397,12 +398,89 @@ private:
         cout << "Board cleared." << endl;
     }
 
-    void save(){
+    void save() {
+        string filename;
+        cout << "Enter filename to save: ";
+        cin >> filename;
 
+        ofstream outFile(filename);
+        if (outFile.is_open()) {
+            for (const auto &shape: board.getShapes()) {
+                outFile << shape->getDescription() << endl;
+            }
+
+            outFile.close();
+            cout << "Board saved to " << filename << endl;
+        } else {
+            cout << "Error opening file for saving." << endl;
+        }
     }
 
-    void load(){
+    void load() {
+        string filename;
+        cout << "Enter filename to load: ";
+        cin >> filename;
 
+        ifstream inFile(filename);
+        if (inFile.is_open()) {
+            board.getShapes().clear();
+            string line;
+
+            while (getline(inFile, line)) {
+                istringstream iss(line);
+                string shapeType, id;
+                int x, y, size1, size2;
+
+                iss >> id >> shapeType;
+
+                if (shapeType == "triangle") {
+                    iss >> x >> y >> size1;
+                    if (!iss.fail()) {
+                        auto triangle = make_shared<Triangle>(id, x, y, size1);
+                        board.addShape(triangle);
+                    } else {
+                        cout << "Error parsing triangle: " << line << endl;
+                    }
+                }
+                else if (shapeType == "circle") {
+                    iss >> x >> y >> size1;
+                    if (!iss.fail()) {
+                        auto circle = make_shared<Circle>(id, x, y, size1);
+                        board.addShape(circle);
+                    } else {
+                        cout << "Error parsing circle: " << line << endl;
+                    }
+                }
+                else if (shapeType == "rectangle") {
+                    iss >> x >> y >> size1 >> size2;
+                    if (!iss.fail()) {
+                        auto rectangle = make_shared<Rectangle>(id, x, y, size1, size2);
+                        board.addShape(rectangle);
+                    } else {
+                        cout << "Error parsing rectangle: " << line << endl;
+                    }
+                }
+                else if (shapeType == "square") {
+                    iss >> x >> y >> size1;
+                    if (!iss.fail()) {
+                        auto square = make_shared<Square>(id, x, y, size1);
+                        board.addShape(square);
+                    } else {
+                        cout << "Error parsing square: " << line << endl;
+                    }
+                }
+                else {
+                    cout << "Unknown shape type: " << shapeType << endl;
+                }
+            }
+
+            inFile.close();
+            cout << "Board loaded from " << filename << endl;
+
+            board.drawBoard();
+        } else {
+            cout << "Error opening file for loading." << endl;
+        }
     }
 
 };
@@ -412,35 +490,5 @@ int main() {
     ui.run();
     return 0;
 }
-
-
-
-//    void drawTriangle(int x, int y, int height) {
-//        if (height <= 0) return;
-//
-//        for (int i = 0; i < height; i++) {
-//            int leftMost = x - i;
-//            int rightMost = x + i;
-//            int posY = y + i;
-//
-//            if (posY < BOARD_HEIGHT) {
-//                if (leftMost >= 0 && leftMost < BOARD_WIDTH) {
-//                    grid[posY][leftMost] = '*';
-//                }
-//                if (rightMost >= 0 && leftMost < BOARD_WIDTH && leftMost != rightMost){
-//                    grid[posY][rightMost] = '*';
-//                }
-//            }
-//        }
-//        for (int j = 0; j < 2 * height - 1; j++){
-//            int baseX = x - height + 1 + j;
-//            int baseY = y + height - 1;
-//            if (baseX >= 0 && baseX < BOARD_WIDTH && baseY < BOARD_HEIGHT){
-//                grid[baseY][baseX] = '*';
-//            }
-//        }
-//    }
-//};
-
 
 
