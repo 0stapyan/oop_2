@@ -30,10 +30,6 @@ public:
         return shapes;
     }
 
-    vector<vector<char>>& getGrid() {
-        return grid;
-    }
-
     void drawBoard() {
         for (auto &row : grid) {
             fill(row.begin(), row.end(), ' ');
@@ -43,19 +39,30 @@ public:
             shape->draw(grid);
         }
 
-        for (const auto &row : grid) {
-            for (char c : row) {
-                cout << c;
-            }
-            cout << "\n";
+        cout << "+";
+        for (int i = 0; i < BOARD_WIDTH; ++i) {
+            cout << "-";
         }
+        cout << "+" << endl;
+
+        for (int row = 0; row < BOARD_HEIGHT; ++row) {
+            cout << "|";
+            for (int col = 0; col < BOARD_WIDTH; ++col) {
+                cout << grid[row][col];
+            }
+            cout << "|" << endl;
+        }
+
+        cout << "+";
+        for (int i = 0; i < BOARD_WIDTH; ++i) {
+            cout << "-";
+        }
+        cout << "+" << endl;
     }
 
     void addShape(shared_ptr<Shape> shape) {
         shapes.push_back(shape);
     }
-
-    void clearBoard() {}
 
 };
 
@@ -66,6 +73,10 @@ private:
 public:
     Triangle(string id, int x, int y, int height) : Shape(id), x(x), y(y), height(height) {}
 
+    int getX() const { return x; }
+    int getY() const { return y; }
+    int getHeight() const { return height; }
+
     void draw(vector<vector<char>>& grid) const override {
         if (height <= 0) return;
 
@@ -74,11 +85,11 @@ public:
             int rightMost = x + i;
             int posY = y + i;
 
-            if (posY < BOARD_HEIGHT) {
+            if (posY < BOARD_HEIGHT && posY >= 0) {
                 if (leftMost >= 0 && leftMost < BOARD_WIDTH) {
                     grid[posY][leftMost] = '*';
                 }
-                if (rightMost >=0 && rightMost < BOARD_WIDTH && leftMost != rightMost) {
+                if (rightMost >= 0 && rightMost < BOARD_WIDTH && leftMost != rightMost) {  // Crop right side
                     grid[posY][rightMost] = '*';
                 }
             }
@@ -87,11 +98,10 @@ public:
         for (int j = 0; j < 2 * height - 1; j++) {
             int baseX = x - height + 1 + j;
             int baseY = y + height - 1;
-            if (baseX >= 0 && baseX < BOARD_WIDTH && baseY < BOARD_HEIGHT) {
+            if (baseX >= 0 && baseX < BOARD_WIDTH && baseY >= 0 && baseY < BOARD_HEIGHT) {  // Crop the base
                 grid[baseY][baseX] = '*';
             }
         }
-
     }
 
     string getDescription() const override {
@@ -105,6 +115,10 @@ private:
 
 public:
     Circle(string id, int x, int y, int radius) : Shape(id), x(x), y(y), radius(radius) {}
+
+    int getX() const { return x; }
+    int getY() const { return y; }
+    int getRadius() const { return radius; }
 
     void draw(vector<vector<char>>& grid) const override {
         int x0 = x;
@@ -154,11 +168,17 @@ private:
 public:
     Rectangle(string id, int x, int y, int width, int height) : Shape(id), x(x), y(y), width(width), height(height) {}
 
+    int getX() const { return x; }
+    int getY() const { return y; }
+    int getWidth() const { return width; }
+    int getHeight() const { return height; }
+
     void draw(vector<vector<char>>& grid) const override {
         for (int i = 0; i < width; i++) {
             int topX = x + i;
             int topY = y;
             int bottomY = y + height - 1;
+
             if (topX >= 0 && topX < BOARD_WIDTH) {
                 if (topY >= 0 && topY < BOARD_HEIGHT) {
                     grid[topY][topX] = '*';
@@ -173,6 +193,7 @@ public:
             int leftX = x;
             int rightX = x + width - 1;
             int drawY = y + j;
+
             if (drawY >= 0 && drawY < BOARD_HEIGHT) {
                 if (leftX >= 0 && leftX < BOARD_WIDTH) {
                     grid[drawY][leftX] = '*';
@@ -182,11 +203,10 @@ public:
                 }
             }
         }
-
     }
 
     string getDescription() const override {
-        return id + " " + to_string(width) + " " + to_string(height) + " " + to_string(x) + " " + to_string(y) + " ";
+        return id + " rectangle " + to_string(width) + " " + to_string(height) + " " + to_string(x) + " " + to_string(y) + " ";
     }
 
 };
@@ -198,18 +218,23 @@ private:
 public:
     Square(string id, int x, int y, int sideLength) : Shape(id), x(x), y(y), sideLength(sideLength) {}
 
+    int getX() const { return x; }
+    int getY() const { return y; }
+    int getSideLength() const { return sideLength; }
+
     void draw(vector<vector<char>>& grid) const override {
         for (int i = 0; i < sideLength; ++i) {
             int topX = x + i;
             int topY = y;
             int bottomY = y + sideLength - 1;
 
-            if (topX >= 0 && topX < BOARD_WIDTH && topY >= 0 && topY < BOARD_HEIGHT) {
-                grid[topY][topX] = '*';
-            }
-
-            if (topX >= 0 && topX < BOARD_WIDTH && bottomY >= 0 && bottomY < BOARD_HEIGHT) {
-                grid[bottomY][topX] = '*';
+            if (topX >= 0 && topX < BOARD_WIDTH) {
+                if (topY >= 0 && topY < BOARD_HEIGHT) {
+                    grid[topY][topX] = '*';
+                }
+                if (bottomY >= 0 && bottomY < BOARD_HEIGHT) {
+                    grid[bottomY][topX] = '*';
+                }
             }
         }
 
@@ -218,12 +243,13 @@ public:
             int rightX = x + sideLength - 1;
             int drawY = y + j;
 
-            if (leftX >= 0 && leftX < BOARD_WIDTH && drawY >= 0 && drawY < BOARD_HEIGHT) {
-                grid[drawY][leftX] = '*';
-            }
-
-            if (rightX >= 0 && rightX < BOARD_WIDTH && drawY >= 0 && drawY < BOARD_HEIGHT) {
-                grid[drawY][rightX] = '*';
+            if (drawY >= 0 && drawY < BOARD_HEIGHT) {
+                if (leftX >= 0 && leftX < BOARD_WIDTH) {
+                    grid[drawY][leftX] = '*';
+                }
+                if (rightX >= 0 && rightX < BOARD_WIDTH) {
+                    grid[drawY][rightX] = '*';
+                }
             }
         }
     }
@@ -326,64 +352,95 @@ private:
         cin >> shapeType;
 
         string id = "Shape" + to_string(shapeCounter++);
+        bool isDuplicate = false;
 
         if (shapeType == "triangle") {
             int x, y, height;
             cout << "Enter x, y, height: ";
             cin >> x >> y >> height;
 
-            if (x - height < 0 || x + height >= BOARD_WIDTH || y + height >= BOARD_HEIGHT) {
-                cout << "Triangle is out of bounds! Please enter valid coordinates and height." << endl;
-                return;
+            // Check for duplicates
+            for (const auto &shape: board.getShapes()) {
+                auto triangle = dynamic_pointer_cast<Triangle>(shape);
+                if (triangle && triangle->getX() == x && triangle->getY() == y && triangle->getHeight() == height) {
+                    isDuplicate = true;
+                    break;
+                }
             }
 
-            auto triangle = make_shared<Triangle>(id, x, y, height);
-            board.addShape(triangle);
-            cout << "Triangle added." << endl;
+            if (!isDuplicate) {
+                auto triangle = make_shared<Triangle>(id, x, y, height);
+                board.addShape(triangle);
+                cout << "Triangle added." << endl;
+            } else {
+                cout << "A triangle with the same parameters already exists at this position!" << endl;
+            }
         } else if (shapeType == "circle") {
             int x, y, radius;
             cout << "Enter x, y, radius: ";
             cin >> x >> y >> radius;
 
-            if (x - radius < 0 || x + radius >= BOARD_WIDTH || y - radius < 0 || y + radius >= BOARD_HEIGHT) {
-                cout << "Circle is out of bounds! Please enter valid coordinates and radius." << endl;
-                return;
+            // Check for duplicates
+            for (const auto &shape: board.getShapes()) {
+                auto circle = dynamic_pointer_cast<Circle>(shape);
+                if (circle && circle->getX() == x && circle->getY() == y && circle->getRadius() == radius) {
+                    isDuplicate = true;
+                    break;
+                }
             }
 
-            auto circle = make_shared<Circle>(id, x, y, radius);
-            board.addShape(circle);
-            cout << "Circle added." << endl;
+            if (!isDuplicate) {
+                auto circle = make_shared<Circle>(id, x, y, radius);
+                board.addShape(circle);
+                cout << "Circle added." << endl;
+            } else {
+                cout << "A circle with the same parameters already exists at this position!" << endl;
+            }
         } else if (shapeType == "rectangle") {
             int x, y, width, height;
             cout << "Enter x, y, width, height: ";
             cin >> x >> y >> width >> height;
 
-            if (x < 0 || x + width >= BOARD_WIDTH || y < 0 || y + height >= BOARD_HEIGHT) {
-                cout << "Rectangle is out of bounds! Please enter valid coordinates and dimensions." << endl;
-                return;
+            // Check for duplicates
+            for (const auto &shape: board.getShapes()) {
+                auto rectangle = dynamic_pointer_cast<Rectangle>(shape);
+                if (rectangle && rectangle->getX() == x && rectangle->getY() == y && rectangle->getWidth() == width &&
+                    rectangle->getHeight() == height) {
+                    isDuplicate = true;
+                    break;
+                }
             }
 
-            auto rectangle = make_shared<Rectangle>(id, x, y, width, height);
-            board.addShape(rectangle);
-            cout << "Rectangle added." << endl;
+            if (!isDuplicate) {
+                auto rectangle = make_shared<Rectangle>(id, x, y, width, height);
+                board.addShape(rectangle);
+                cout << "Rectangle added." << endl;
+            } else {
+                cout << "A rectangle with the same parameters already exists at this position!" << endl;
+            }
         } else if (shapeType == "square") {
             int x, y, sideLength;
             cout << "Enter x, y, sideLength: ";
             cin >> x >> y >> sideLength;
 
-            if (x < 0 || x + sideLength >= BOARD_WIDTH || y < 0 || y + sideLength >= BOARD_HEIGHT) {
-                cout << "Square is out of bounds! Please enter valid coordinates and side length." << endl;
-                return;
+            // Check for duplicates
+            for (const auto &shape: board.getShapes()) {
+                auto square = dynamic_pointer_cast<Square>(shape);
+                if (square && square->getX() == x && square->getY() == y && square->getSideLength() == sideLength) {
+                    isDuplicate = true;
+                    break;
+                }
             }
 
-            auto square = make_shared<Square>(id, x, y, sideLength);
-            board.addShape(square);
-            cout << "Square added." << endl;
-        } else {
-            cout << "Invalid shape type" << endl;
+            if (!isDuplicate) {
+                auto square = make_shared<Square>(id, x, y, sideLength);
+                board.addShape(square);
+                cout << "Square added." << endl;
+            } else {
+                cout << "A square with the same parameters already exists at this position!" << endl;
+            }
         }
     }
-
     void undo() {
         if (!board.getShapes().empty()) {
             board.getShapes().pop_back();
