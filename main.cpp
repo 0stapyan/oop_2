@@ -16,6 +16,7 @@ public:
     virtual ~Shape() {}
     virtual void draw(vector<vector<char>>& grid) const = 0;
     virtual string getDescription() const = 0;
+
 };
 
 class Board{
@@ -278,57 +279,45 @@ public:
                 "9. exit\n""" << endl;
 
         while (true) {
-            cout << ">" << endl;
+            cout << ">";
             getline(cin, command);
 
-            int commandNumber = -1;
-            if (command == "draw") commandNumber = 1;
-            else if (command == "list") commandNumber = 2;
-            else if (command == "shapes") commandNumber = 3;
-            else if (command == "add") commandNumber = 4;
-            else if (command == "undo") commandNumber = 5;
-            else if (command == "clear") commandNumber = 6;
-            else if (command == "save") commandNumber = 7;
-            else if (command == "load") commandNumber = 8;
-            else if (command == "exit") commandNumber = 9;
+            stringstream ss(command);
+            string cmd;
+            ss >> cmd;
 
-            switch (commandNumber) {
-                case 1:
-                    drawBoard();
-                    break;
-                case 2:
-                    listOfShapes();
-                    break;
-                case 3:
-                    availableShapes();
-                    break;
-                case 4:
-                    add();
-                    break;
-                case 5:
-                    undo();
-                    break;
-                case 6:
-                    clear();
-                    break;
-                case 7:
-                    save();
-                    break;
-                case 8:
-                    load();
-                    break;
-                case 9:
-                    return;
+            if (cmd == "draw") {
+                drawBoard();
+            } else if (cmd == "list") {
+                listOfShapes();
+            } else if (cmd == "shapes") {
+                availableShapes();
+            } else if (cmd == "add") {
+                add(ss);
+            } else if (cmd == "undo") {
+                undo();
+            } else if (cmd == "clear") {
+                clear();
+            } else if (cmd == "save") {
+                string filename;
+                ss >> filename;
+                save(filename);
+            } else if (cmd == "load") {
+                string filename;
+                ss >> filename;
+                load(filename);
+            } else if (cmd == "exit") {
+                return;
+            } else {
+                cout << "Invalid command!" << endl;
             }
         }
-
     }
 
 private:
     void drawBoard() {
         board.drawBoard();
     }
-
 
     void listOfShapes() {
         cout << "List of shapes:" << endl;
@@ -342,111 +331,64 @@ private:
         cout << "1. Triangle - Parameters: x y height\n";
         cout << "2. Circle - Parameters: x y radius\n";
         cout << "3. Rectangle - Parameters: x y width height\n";
-        cout << "4. Square - Parameters: x y sideLength\\n";
+        cout << "4. Square - Parameters: x y sideLength\n";
     }
 
-    void add() {
+    void add(stringstream &ss) {
         string shapeType;
         static int shapeCounter = 1;
-        cout << "Enter shape type (triangle, circle, rectangle, square): " << endl;
-        cin >> shapeType;
+        ss >> shapeType;
 
         string id = "Shape" + to_string(shapeCounter++);
         bool isDuplicate = false;
 
         if (shapeType == "triangle") {
             int x, y, height;
-            cout << "Enter x, y, height: ";
-            cin >> x >> y >> height;
-
-            // Check for duplicates
-            for (const auto &shape: board.getShapes()) {
-                auto triangle = dynamic_pointer_cast<Triangle>(shape);
-                if (triangle && triangle->getX() == x && triangle->getY() == y && triangle->getHeight() == height) {
-                    isDuplicate = true;
-                    break;
-                }
-            }
+            ss >> x >> y >> height;
 
             if (!isDuplicate) {
                 auto triangle = make_shared<Triangle>(id, x, y, height);
                 board.addShape(triangle);
                 cout << "Triangle added." << endl;
-            } else {
-                cout << "A triangle with the same parameters already exists at this position!" << endl;
             }
         } else if (shapeType == "circle") {
             int x, y, radius;
-            cout << "Enter x, y, radius: ";
-            cin >> x >> y >> radius;
-
-            // Check for duplicates
-            for (const auto &shape: board.getShapes()) {
-                auto circle = dynamic_pointer_cast<Circle>(shape);
-                if (circle && circle->getX() == x && circle->getY() == y && circle->getRadius() == radius) {
-                    isDuplicate = true;
-                    break;
-                }
-            }
+            ss >> x >> y >> radius;
 
             if (!isDuplicate) {
                 auto circle = make_shared<Circle>(id, x, y, radius);
                 board.addShape(circle);
                 cout << "Circle added." << endl;
-            } else {
-                cout << "A circle with the same parameters already exists at this position!" << endl;
             }
         } else if (shapeType == "rectangle") {
             int x, y, width, height;
-            cout << "Enter x, y, width, height: ";
-            cin >> x >> y >> width >> height;
-
-            // Check for duplicates
-            for (const auto &shape: board.getShapes()) {
-                auto rectangle = dynamic_pointer_cast<Rectangle>(shape);
-                if (rectangle && rectangle->getX() == x && rectangle->getY() == y && rectangle->getWidth() == width &&
-                    rectangle->getHeight() == height) {
-                    isDuplicate = true;
-                    break;
-                }
-            }
+            ss >> x >> y >> width >> height;
 
             if (!isDuplicate) {
                 auto rectangle = make_shared<Rectangle>(id, x, y, width, height);
                 board.addShape(rectangle);
                 cout << "Rectangle added." << endl;
-            } else {
-                cout << "A rectangle with the same parameters already exists at this position!" << endl;
             }
         } else if (shapeType == "square") {
             int x, y, sideLength;
-            cout << "Enter x, y, sideLength: ";
-            cin >> x >> y >> sideLength;
-
-            // Check for duplicates
-            for (const auto &shape: board.getShapes()) {
-                auto square = dynamic_pointer_cast<Square>(shape);
-                if (square && square->getX() == x && square->getY() == y && square->getSideLength() == sideLength) {
-                    isDuplicate = true;
-                    break;
-                }
-            }
+            ss >> x >> y >> sideLength;
 
             if (!isDuplicate) {
                 auto square = make_shared<Square>(id, x, y, sideLength);
                 board.addShape(square);
                 cout << "Square added." << endl;
-            } else {
-                cout << "A square with the same parameters already exists at this position!" << endl;
             }
+        } else {
+            cout << "Invalid shape type!" << endl;
         }
     }
+
     void undo() {
         if (!board.getShapes().empty()) {
             board.getShapes().pop_back();
             cout << "Last added shape removed." << endl;
         } else {
-            cout << "No shapesto undo." << endl;
+            cout << "No shapes to undo." << endl;
         }
     }
 
@@ -455,17 +397,12 @@ private:
         cout << "Board cleared." << endl;
     }
 
-    void save() {
-        string filename;
-        cout << "Enter filename to save: ";
-        cin >> filename;
-
+    void save(const string &filename) {
         ofstream outFile(filename);
         if (outFile.is_open()) {
             for (const auto &shape: board.getShapes()) {
                 outFile << shape->getDescription() << endl;
             }
-
             outFile.close();
             cout << "Board saved to " << filename << endl;
         } else {
@@ -473,11 +410,7 @@ private:
         }
     }
 
-    void load() {
-        string filename;
-        cout << "Enter filename to load: ";
-        cin >> filename;
-
+    void load(const string &filename) {
         ifstream inFile(filename);
         if (inFile.is_open()) {
             board.getShapes().clear();
@@ -498,8 +431,7 @@ private:
                     } else {
                         cout << "Error parsing triangle: " << line << endl;
                     }
-                }
-                else if (shapeType == "circle") {
+                } else if (shapeType == "circle") {
                     iss >> x >> y >> size1;
                     if (!iss.fail()) {
                         auto circle = make_shared<Circle>(id, x, y, size1);
@@ -507,8 +439,7 @@ private:
                     } else {
                         cout << "Error parsing circle: " << line << endl;
                     }
-                }
-                else if (shapeType == "rectangle") {
+                } else if (shapeType == "rectangle") {
                     iss >> x >> y >> size1 >> size2;
                     if (!iss.fail()) {
                         auto rectangle = make_shared<Rectangle>(id, x, y, size1, size2);
@@ -516,8 +447,7 @@ private:
                     } else {
                         cout << "Error parsing rectangle: " << line << endl;
                     }
-                }
-                else if (shapeType == "square") {
+                } else if (shapeType == "square") {
                     iss >> x >> y >> size1;
                     if (!iss.fail()) {
                         auto square = make_shared<Square>(id, x, y, size1);
@@ -525,21 +455,17 @@ private:
                     } else {
                         cout << "Error parsing square: " << line << endl;
                     }
-                }
-                else {
+                } else {
                     cout << "Unknown shape type: " << shapeType << endl;
                 }
             }
 
             inFile.close();
             cout << "Board loaded from " << filename << endl;
-
-            board.drawBoard();
         } else {
             cout << "Error opening file for loading." << endl;
         }
     }
-
 };
 
 int main() {
