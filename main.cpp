@@ -16,6 +16,8 @@ public:
     virtual ~Shape() {}
     virtual void draw(vector<vector<char>>& grid) const = 0;
     virtual string getDescription() const = 0;
+    string getId() const { return id; }
+    virtual bool containsPoint(int x, int y) const = 0;
 
 };
 
@@ -23,6 +25,7 @@ class Board{
 private:
     vector<vector<char>> grid;
     vector<shared_ptr<Shape>> shapes;
+    shared_ptr<Shape> selectedShape = nullptr;
 
 public:
     Board() : grid(BOARD_HEIGHT, vector<char>(BOARD_WIDTH, ' ')) {}
@@ -65,6 +68,34 @@ public:
         shapes.push_back(shape);
     }
 
+    void selectByCoord(int x, int y) {
+        for (const auto& shape : shapes) {
+            if (shape->containsPoint(x, y)) {
+                selectedShape = shape;
+                cout << "Shape selected: " << selectedShape->getDescription() << endl;
+                return;
+            }
+        }
+        cout << "No shape found." << endl;
+    }
+
+    void selectById(const string& id) {
+        auto it = find_if(shapes.begin(), shapes.end(), [&](shared_ptr<Shape>shape) {
+            return shape->getId() == id;
+        });
+
+        if (it != shapes.end()) {
+            selectedShape = *it;
+            cout << "Shape selected: " << selectedShape->getDescription() << endl;
+        }
+        else {
+            cout << "Shape not found." << endl;
+        }
+    }
+
+    shared_ptr<Shape> getSelectedShape() const {
+        return selectedShape;
+    }
 };
 
 class Triangle : public Shape{
@@ -73,10 +104,6 @@ private:
 
 public:
     Triangle(string id, int x, int y, int height) : Shape(id), x(x), y(y), height(height) {}
-
-    int getX() const { return x; }
-    int getY() const { return y; }
-    int getHeight() const { return height; }
 
     void draw(vector<vector<char>>& grid) const override {
         if (height <= 0) return;
@@ -108,6 +135,12 @@ public:
     string getDescription() const override {
         return id + " triangle " + to_string(height) + " " + to_string(x) + " " + to_string(y) + " ";
     }
+
+    bool containsPoint(int px, int py) const override {
+        if (py < y || py >= y + height) return false;
+        int dx = py - y;
+        return px >= x - dx && px <= x + dx;
+    }
 };
 
 class Circle : public Shape{
@@ -116,10 +149,6 @@ private:
 
 public:
     Circle(string id, int x, int y, int radius) : Shape(id), x(x), y(y), radius(radius) {}
-
-    int getX() const { return x; }
-    int getY() const { return y; }
-    int getRadius() const { return radius; }
 
     void draw(vector<vector<char>>& grid) const override {
         int x0 = x;
@@ -160,6 +189,12 @@ public:
     string getDescription() const override {
         return id + " circle " + to_string(radius) + " " + to_string(x) + " " + to_string(y) + " ";
     }
+
+    bool containsPoint(int px, int py) const override {
+        int dx = px - x;
+        int dy = py - y;
+        return dx * dx + dy * dy <= radius * radius;
+    }
 };
 
 class Rectangle : public Shape{
@@ -168,11 +203,6 @@ private:
 
 public:
     Rectangle(string id, int x, int y, int width, int height) : Shape(id), x(x), y(y), width(width), height(height) {}
-
-    int getX() const { return x; }
-    int getY() const { return y; }
-    int getWidth() const { return width; }
-    int getHeight() const { return height; }
 
     void draw(vector<vector<char>>& grid) const override {
         for (int i = 0; i < width; i++) {
@@ -210,6 +240,9 @@ public:
         return id + " rectangle " + to_string(width) + " " + to_string(height) + " " + to_string(x) + " " + to_string(y) + " ";
     }
 
+    bool containsPoint(int px, int py) const override {
+        return px >= x && px < x + width && py >= y && py < y + height;
+    }
 };
 
 class Square : public Shape {
@@ -218,10 +251,6 @@ private:
 
 public:
     Square(string id, int x, int y, int sideLength) : Shape(id), x(x), y(y), sideLength(sideLength) {}
-
-    int getX() const { return x; }
-    int getY() const { return y; }
-    int getSideLength() const { return sideLength; }
 
     void draw(vector<vector<char>>& grid) const override {
         for (int i = 0; i < sideLength; ++i) {
@@ -258,6 +287,10 @@ public:
     string getDescription() const override {
         return id + " square " + to_string(sideLength) + " " + to_string(x) + " " + to_string(y) + " ";
     }
+
+    bool containsPoint(int px, int py) const override {
+        return px >= x && px < x + sideLength && py >= y && py < y + sideLength;
+    }
 };
 
 class UserInterface {
@@ -276,7 +309,8 @@ public:
                 "6. clear\n"
                 "7. save\n"
                 "8. load\n"
-                "9. exit\n""" << endl;
+                "9. select\n"
+                "10. exit\n""" << endl;
 
         while (true) {
             cout << ">";
@@ -306,6 +340,8 @@ public:
                 string filename;
                 ss >> filename;
                 load(filename);
+            } else if (cmd == "select") {
+                select(ss);
             } else if (cmd == "exit") {
                 return;
             } else {
@@ -464,6 +500,26 @@ private:
             cout << "Board loaded from " << filename << endl;
         } else {
             cout << "Error opening file for loading." << endl;
+        }
+    }
+
+    void select(stringstream &ss) {
+        if (ss.rdbuf()->in_avail() == 0) {
+            cout << "No parameters provided" << endl;
+            return;
+        }
+
+        string param;
+        ss >> param;
+
+        if (isdigit(param[0])) {
+            int x = stoi(param);
+            int y;
+            ss >> y;
+            board.selectByCoord(x, y);
+        }
+        else {
+            board.selectById(param);
         }
     }
 };
