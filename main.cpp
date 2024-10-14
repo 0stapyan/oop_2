@@ -503,23 +503,18 @@ private:
         }
     }
 
+private:
     void select(stringstream &ss) {
-        if (ss.rdbuf()->in_avail() == 0) {
-            cout << "No parameters provided" << endl;
-            return;
-        }
-
-        string param;
-        ss >> param;
-
-        if (isdigit(param[0])) {
-            int x = stoi(param);
+        string idOrCoord;
+        ss >> idOrCoord;
+        if (isdigit(idOrCoord[0])) {
+            int x = stoi(idOrCoord);
             int y;
             ss >> y;
             board.selectByCoord(x, y);
         }
         else {
-            board.selectById(param);
+            board.selectById(idOrCoord);
         }
     }
 };
