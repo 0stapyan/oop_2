@@ -7,6 +7,17 @@ using namespace std;
 const int BOARD_WIDTH = 80;
 const int BOARD_HEIGHT = 25;
 
+string getColorName(char color) {
+    switch (color) {
+        case 'r': return "red";
+        case 'g': return "green";
+        case 'b': return "blue";
+        case 'y': return "yellow";
+        case 'w': return "white";
+        default: return "unknown";
+    }
+}
+
 class Shape{
 protected:
     string id;
@@ -20,6 +31,7 @@ public:
     virtual string getDescription() const = 0;
     string getId() const { return id; }
     virtual bool containsPoint(int x, int y) const = 0;
+    virtual bool edit(const vector<int>& parames) = 0;
 };
 
 class Board{
@@ -158,13 +170,30 @@ public:
     }
 
     string getDescription() const override {
-        return id + " triangle " + color + " " + to_string(fill) + " " + to_string(x) + " " + to_string(y) + " " + to_string(height);
+        return id + " triangle " + getColorName(color) + " " + (fill ? "fill" : "frame") + " " + to_string(x) + " " + to_string(y) + " " + to_string(height);
     }
 
     bool containsPoint(int px, int py) const override {
         if (py < y || py >= y + height) return false;
         int dx = py - y;
         return px >= x - dx && px <= x + dx;
+    }
+
+    bool edit(const vector<int>& params) override {
+        if (params.size() != 1) {
+            cout << "error: invalid argument count" << endl;
+            return false;
+        }
+
+        int newHeight = params[0];
+        if (newHeight <= 0 || x - newHeight + 1 < 0 || x + newHeight - 1 >= BOARD_WIDTH || y + newHeight - 1 >= BOARD_HEIGHT) {
+            cout << "error: shape will go out of the board" << endl;
+            return false;
+        }
+
+        height = newHeight;
+        cout << "size of triangle changed" << endl;
+        return true;
     }
 };
 
@@ -226,13 +255,30 @@ public:
     }
 
     string getDescription() const override {
-        return id + " circle " + color + " " + to_string(fill) + " " + to_string(x) + " " + to_string(y) + " " + to_string(radius);
+        return id + " circle " + getColorName(color) + " " + (fill ? "fill" : "frame") + " " + to_string(x) + " " + to_string(y) + " " + to_string(radius);
     }
 
     bool containsPoint(int px, int py) const override {
         int dx = px - x;
         int dy = py - y;
         return dx * dx + dy * dy <= radius * radius;
+    }
+
+    bool edit(const vector<int>& params) override {
+        if (params.size() != 1) {
+            cout << "error: invalid arguments count" << endl;
+            return false;
+        }
+
+        int newRadius = params[0];
+        if (newRadius <= 0 || x - newRadius < 0 || x + newRadius >= BOARD_WIDTH || y - newRadius < 0 || y + newRadius >= BOARD_HEIGHT) {
+            cout << "error: shape will go out of the board" << endl;
+            return false;
+        }
+
+        radius = newRadius;
+        cout << "size of circle changed" << endl;
+        return true;
     }
 };
 
@@ -288,11 +334,30 @@ public:
     }
 
     string getDescription() const override {
-        return id + " rectangle " + color + " " + to_string(fill) + " " + to_string(x) + " " + to_string(y) + " " + to_string(width) + " " + to_string(height);
+        return id + " rectangle " + getColorName(color) + " " + (fill ? "fill" : "frame") + " " + to_string(x) + " " + to_string(y) + " " + to_string(width) + " " + to_string(height);
     }
 
     bool containsPoint(int px, int py) const override {
         return px >= x && px < x + width && py >= y && py < y + height;
+    }
+
+    bool edit(const vector<int>& params) {
+        if (params.size() != 2) {
+            cout << "error: invalid argument count" << endl;
+            return false;
+        }
+
+        int newWidth = params[0];
+        int newHeight = params[1];
+        if (newWidth <= 0 || newHeight <= 0 || x + newWidth - 1 >= BOARD_WIDTH || y + newHeight - 1 >= BOARD_HEIGHT) {
+            cout << "error: shape will go out the board" << endl;
+            return false;
+        }
+
+        width = newWidth;
+        height = newHeight;
+        cout << "size of rectangle changed" << endl;
+        return true;
     }
 };
 
@@ -348,11 +413,27 @@ public:
     }
 
     string getDescription() const override {
-        return id + " square " + color + " " + to_string(fill) + " " + to_string(x) + " " + to_string(y) + " " + to_string(sideLength);
+        return id + " square " + getColorName(color) + " " + (fill ? "fill" : "frame") + " " + to_string(x) + " " + to_string(y) + " " + to_string(sideLength);
     }
 
     bool containsPoint(int px, int py) const override {
         return px >= x && px < x + sideLength && py >= y && py < y + sideLength;
+    }
+
+    bool edit(const vector<int>& params) override {
+        if (params.size() != 1) {
+            cout << "error: invalid argument count" << endl;
+            return false;
+        }
+
+        int newSideLength = params[0];
+        if (newSideLength <= 0 || x + newSideLength > BOARD_WIDTH || y + newSideLength > BOARD_HEIGHT) {
+            cout << "error: shape will go out of the board" << endl;
+            return false;
+        }
+
+        sideLength = newSideLength;
+        cout << "size of square changed" << endl;
     }
 };
 
@@ -374,7 +455,8 @@ public:
                 "8. load\n"
                 "9. select\n"
                 "10. remove\n"
-                "11. exit\n""" << endl;
+                "11. edit\n"
+                "12. exit\n""" << endl;
 
         while (true) {
             cout << ">";
@@ -408,6 +490,8 @@ public:
                 select(ss);
             } else if (cmd == "remove") {
                 remove();
+            } else if (cmd == "edit") {
+                edit(ss);
             } else if (cmd == "exit") {
                 return;
             } else {
@@ -588,6 +672,24 @@ private:
 
     void remove() {
         board.removeSelectedShape();
+    }
+
+    void edit(stringstream &ss) {
+        vector<int> params;
+        int param;
+        while (ss >> param) {
+            params.push_back(param);
+        }
+
+        auto selectedShape = board.getSelectedShape();
+        if (!selectedShape) {
+            cout << "No shape selected to edit" << endl;
+            return;
+        }
+
+        if (!selectedShape->edit(params)) {
+            cout << "Error: Could not edit shape with given parameters." << endl;
+        }
     }
 };
 
