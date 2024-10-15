@@ -32,6 +32,7 @@ public:
     string getId() const { return id; }
     virtual bool containsPoint(int x, int y) const = 0;
     virtual bool edit(const vector<int>& parames) = 0;
+    void paint(char newColor) { color = newColor; }
 };
 
 class Board{
@@ -456,7 +457,8 @@ public:
                 "9. select\n"
                 "10. remove\n"
                 "11. edit\n"
-                "12. exit\n""" << endl;
+                "12. paint\n"
+                "13. exit\n""" << endl;
 
         while (true) {
             cout << ">";
@@ -492,6 +494,8 @@ public:
                 remove();
             } else if (cmd == "edit") {
                 edit(ss);
+            } else if (cmd == "paint") {
+                paint(ss);
             } else if (cmd == "exit") {
                 return;
             } else {
@@ -690,6 +694,21 @@ private:
         if (!selectedShape->edit(params)) {
             cout << "Error: Could not edit shape with given parameters." << endl;
         }
+    }
+
+    void paint(stringstream &ss) {
+        string color;
+        ss >> color;
+
+        auto selectedShape = board.getSelectedShape();
+        if (!selectedShape) {
+            cout << "No shape selected to paint." << endl;
+            return;
+        }
+
+        char colorChar = color[0];
+        selectedShape->paint(colorChar);
+        cout << selectedShape->getId() << " " << selectedShape->getDescription() << "painted" << color << endl;
     }
 };
 
