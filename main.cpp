@@ -10,15 +10,16 @@ const int BOARD_HEIGHT = 25;
 class Shape{
 protected:
     string id;
+    char color;
+    bool fill;
 
 public:
-    Shape(string id) : id(id) {}
+    Shape(string id, char color, bool fill) : id(id), color(color), fill(fill) {}
     virtual ~Shape() {}
     virtual void draw(vector<vector<char>>& grid) const = 0;
     virtual string getDescription() const = 0;
     string getId() const { return id; }
     virtual bool containsPoint(int x, int y) const = 0;
-
 };
 
 class Board{
@@ -96,6 +97,18 @@ public:
     shared_ptr<Shape> getSelectedShape() const {
         return selectedShape;
     }
+
+    void removeSelectedShape() {
+        if (selectedShape) {
+            shapes.erase(remove_if(shapes.begin(), shapes.end(), [&](shared_ptr<Shape>shape) {
+                return shape == selectedShape;
+            }), shapes.end());
+            cout << selectedShape->getId() << " " << selectedShape->getDescription() << " removed" << endl;
+            selectedShape = nullptr;
+        } else {
+            cout << " No shape selected to remove." << endl;
+        }
+    }
 };
 
 class Triangle : public Shape{
@@ -103,7 +116,7 @@ private:
     int x, y, height;
 
 public:
-    Triangle(string id, int x, int y, int height) : Shape(id), x(x), y(y), height(height) {}
+    Triangle(string id, char color, bool fill, int x, int y, int height) : Shape(id, color, fill), x(x), y(y), height(height) {}
 
     void draw(vector<vector<char>>& grid) const override {
         if (height <= 0) return;
@@ -115,10 +128,10 @@ public:
 
             if (posY < BOARD_HEIGHT && posY >= 0) {
                 if (leftMost >= 0 && leftMost < BOARD_WIDTH) {
-                    grid[posY][leftMost] = '*';
+                    grid[posY][leftMost] = color;
                 }
-                if (rightMost >= 0 && rightMost < BOARD_WIDTH && leftMost != rightMost) {  // Crop right side
-                    grid[posY][rightMost] = '*';
+                if (rightMost >= 0 && rightMost < BOARD_WIDTH && leftMost != rightMost) {
+                    grid[posY][rightMost] = color;
                 }
             }
         }
@@ -126,14 +139,26 @@ public:
         for (int j = 0; j < 2 * height - 1; j++) {
             int baseX = x - height + 1 + j;
             int baseY = y + height - 1;
-            if (baseX >= 0 && baseX < BOARD_WIDTH && baseY >= 0 && baseY < BOARD_HEIGHT) {  // Crop the base
-                grid[baseY][baseX] = '*';
+            if (baseX >= 0 && baseX < BOARD_WIDTH && baseY >= 0 && baseY < BOARD_HEIGHT) {
+                grid[baseY][baseX] = color;
+            }
+        }
+
+        if (fill) {
+            for (int i = 1; i < height; i++) {
+                for (int j = -i + 1; j < i; j++) {
+                    int posX = x + j;
+                    int posY = y + i;
+                    if (posX >= 0 && posX < BOARD_WIDTH && posY >= 0 && posY < BOARD_HEIGHT) {
+                        grid[posY][posX] = color;
+                    }
+                }
             }
         }
     }
 
     string getDescription() const override {
-        return id + " triangle " + to_string(height) + " " + to_string(x) + " " + to_string(y) + " ";
+        return id + " triangle " + color + " " + to_string(fill) + " " + to_string(x) + " " + to_string(y) + " " + to_string(height);
     }
 
     bool containsPoint(int px, int py) const override {
@@ -148,7 +173,7 @@ private:
     int x, y, radius;
 
 public:
-    Circle(string id, int x, int y, int radius) : Shape(id), x(x), y(y), radius(radius) {}
+    Circle(string id, char color, bool fill, int x, int y, int radius) : Shape(id, color, fill), x(x), y(y), radius(radius) {}
 
     void draw(vector<vector<char>>& grid) const override {
         int x0 = x;
@@ -160,21 +185,21 @@ public:
 
         while (x >= y) {
             if (x0 + x >= 0 && x0 + x < BOARD_WIDTH && y0 + y >= 0 && y0 + y < BOARD_HEIGHT)
-                grid[y0 + y][x0 + x] = '*';
+                grid[y0 + y][x0 + x] = color;
             if (x0 + y >= 0 && x0 + y < BOARD_WIDTH && y0 + x >= 0 && y0 + x < BOARD_HEIGHT)
-                grid[y0 + x][x0 + y] = '*';
+                grid[y0 + x][x0 + y] = color;
             if (x0 - y >= 0 && x0 - y < BOARD_WIDTH && y0 + x >= 0 && y0 + x < BOARD_HEIGHT)
-                grid[y0 + x][x0 - y] = '*';
+                grid[y0 + x][x0 - y] = color;
             if (x0 - x >= 0 && x0 - x < BOARD_WIDTH && y0 + y >= 0 && y0 + y < BOARD_HEIGHT)
-                grid[y0 + y][x0 - x] = '*';
+                grid[y0 + y][x0 - x] = color;
             if (x0 - x >= 0 && x0 - x < BOARD_WIDTH && y0 - y >= 0 && y0 - y < BOARD_HEIGHT)
-                grid[y0 - y][x0 - x] = '*';
+                grid[y0 - y][x0 - x] = color;
             if (x0 - y >= 0 && x0 - y < BOARD_WIDTH && y0 - x >= 0 && y0 - x < BOARD_HEIGHT)
-                grid[y0 - x][x0 - y] = '*';
+                grid[y0 - x][x0 - y] = color;
             if (x0 + y >= 0 && x0 + y < BOARD_WIDTH && y0 - x >= 0 && y0 - x < BOARD_HEIGHT)
-                grid[y0 - x][x0 + y] = '*';
+                grid[y0 - x][x0 + y] = color;
             if (x0 + x >= 0 && x0 + x < BOARD_WIDTH && y0 - y >= 0 && y0 - y < BOARD_HEIGHT)
-                grid[y0 - y][x0 + x] = '*';
+                grid[y0 - y][x0 + x] = color;
 
             y++;
             if (decisionOver2 <= 0) {
@@ -184,10 +209,24 @@ public:
                 decisionOver2 += 2 * (y - x) + 1;
             }
         }
+
+        if (fill) {
+            for (int fy = -radius; fy <= radius; fy++) {
+                for (int fx = -radius; fx <= radius; fx++) {
+                    if (fx * fx + fy * fy <= radius * radius) {
+                        int fillX = x0 + fx;
+                        int fillY = y0 + fy;
+                        if (fillX >= 0 && fillX < BOARD_WIDTH && fillY >= 0 && fillY < BOARD_HEIGHT){
+                            grid[fillY][fillX] = color;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     string getDescription() const override {
-        return id + " circle " + to_string(radius) + " " + to_string(x) + " " + to_string(y) + " ";
+        return id + " circle " + color + " " + to_string(fill) + " " + to_string(x) + " " + to_string(y) + " " + to_string(radius);
     }
 
     bool containsPoint(int px, int py) const override {
@@ -202,7 +241,7 @@ private:
     int x, y, width, height;
 
 public:
-    Rectangle(string id, int x, int y, int width, int height) : Shape(id), x(x), y(y), width(width), height(height) {}
+    Rectangle(string id, char color, bool fill, int x, int y, int width, int height) : Shape(id, color, fill), x(x), y(y), width(width), height(height) {}
 
     void draw(vector<vector<char>>& grid) const override {
         for (int i = 0; i < width; i++) {
@@ -212,10 +251,10 @@ public:
 
             if (topX >= 0 && topX < BOARD_WIDTH) {
                 if (topY >= 0 && topY < BOARD_HEIGHT) {
-                    grid[topY][topX] = '*';
+                    grid[topY][topX] = color;
                 }
                 if (bottomY >= 0 && bottomY < BOARD_HEIGHT) {
-                    grid[bottomY][topX] = '*';
+                    grid[bottomY][topX] = color;
                 }
             }
         }
@@ -227,17 +266,29 @@ public:
 
             if (drawY >= 0 && drawY < BOARD_HEIGHT) {
                 if (leftX >= 0 && leftX < BOARD_WIDTH) {
-                    grid[drawY][leftX] = '*';
+                    grid[drawY][leftX] = color;
                 }
                 if (rightX >= 0 && rightX < BOARD_WIDTH) {
-                    grid[drawY][rightX] = '*';
+                    grid[drawY][rightX] = color;
+                }
+            }
+        }
+
+        if (fill) {
+            for (int i = 1; i < height - 1; i++) {
+                for (int j = 1; j < width - 1; j++) {
+                    int fillX = x + j;
+                    int fillY = y + i;
+                    if (fillX >= 0 && fillX < BOARD_WIDTH && fillY >= 0 && fillY < BOARD_HEIGHT) {
+                        grid[fillY][fillX] = color;
+                    }
                 }
             }
         }
     }
 
     string getDescription() const override {
-        return id + " rectangle " + to_string(width) + " " + to_string(height) + " " + to_string(x) + " " + to_string(y) + " ";
+        return id + " rectangle " + color + " " + to_string(fill) + " " + to_string(x) + " " + to_string(y) + " " + to_string(width) + " " + to_string(height);
     }
 
     bool containsPoint(int px, int py) const override {
@@ -250,7 +301,7 @@ private:
     int x, y, sideLength;
 
 public:
-    Square(string id, int x, int y, int sideLength) : Shape(id), x(x), y(y), sideLength(sideLength) {}
+    Square(string id, char color, bool fill, int x, int y, int sideLength) : Shape(id, color, fill), x(x), y(y), sideLength(sideLength) {}
 
     void draw(vector<vector<char>>& grid) const override {
         for (int i = 0; i < sideLength; ++i) {
@@ -260,10 +311,10 @@ public:
 
             if (topX >= 0 && topX < BOARD_WIDTH) {
                 if (topY >= 0 && topY < BOARD_HEIGHT) {
-                    grid[topY][topX] = '*';
+                    grid[topY][topX] = color;
                 }
                 if (bottomY >= 0 && bottomY < BOARD_HEIGHT) {
-                    grid[bottomY][topX] = '*';
+                    grid[bottomY][topX] = color;
                 }
             }
         }
@@ -275,17 +326,29 @@ public:
 
             if (drawY >= 0 && drawY < BOARD_HEIGHT) {
                 if (leftX >= 0 && leftX < BOARD_WIDTH) {
-                    grid[drawY][leftX] = '*';
+                    grid[drawY][leftX] = color;
                 }
                 if (rightX >= 0 && rightX < BOARD_WIDTH) {
-                    grid[drawY][rightX] = '*';
+                    grid[drawY][rightX] = color;
+                }
+            }
+        }
+
+        if (fill) {
+            for (int i = 1; i < sideLength - 1; i++) {
+                for (int j = 1; j < sideLength - 1; j++) {
+                    int fillX = x + j;
+                    int fillY = y + i;
+                    if (fillX >= 0 && fillX < BOARD_WIDTH && fillY >= 0 && fillY < BOARD_HEIGHT) {
+                        grid[fillY][fillX] = color;
+                    }
                 }
             }
         }
     }
 
     string getDescription() const override {
-        return id + " square " + to_string(sideLength) + " " + to_string(x) + " " + to_string(y) + " ";
+        return id + " square " + color + " " + to_string(fill) + " " + to_string(x) + " " + to_string(y) + " " + to_string(sideLength);
     }
 
     bool containsPoint(int px, int py) const override {
@@ -310,7 +373,8 @@ public:
                 "7. save\n"
                 "8. load\n"
                 "9. select\n"
-                "10. exit\n""" << endl;
+                "10. remove\n"
+                "11. exit\n""" << endl;
 
         while (true) {
             cout << ">";
@@ -342,6 +406,8 @@ public:
                 load(filename);
             } else if (cmd == "select") {
                 select(ss);
+            } else if (cmd == "remove") {
+                remove();
             } else if (cmd == "exit") {
                 return;
             } else {
@@ -371,10 +437,12 @@ private:
     }
 
     void add(stringstream &ss) {
-        string shapeType;
+        string fillType, color, shapeType;
         static int shapeCounter = 1;
-        ss >> shapeType;
+        ss >> fillType >> color >> shapeType;
 
+        char colorChar = color[0];
+        bool fill = (fillType == "fill");
         string id = "Shape" + to_string(shapeCounter++);
         bool isDuplicate = false;
 
@@ -383,36 +451,36 @@ private:
             ss >> x >> y >> height;
 
             if (!isDuplicate) {
-                auto triangle = make_shared<Triangle>(id, x, y, height);
+                auto triangle = make_shared<Triangle>(id, colorChar, fill, x, y, height);
                 board.addShape(triangle);
-                cout << "Triangle added." << endl;
+                cout << id << " triangle " << color << " " << height << " " << x << " " << y << endl;
             }
         } else if (shapeType == "circle") {
             int x, y, radius;
             ss >> x >> y >> radius;
 
             if (!isDuplicate) {
-                auto circle = make_shared<Circle>(id, x, y, radius);
+                auto circle = make_shared<Circle>(id, colorChar, fill, x, y, radius);
                 board.addShape(circle);
-                cout << "Circle added." << endl;
+                cout << id << " circle " << color << " " << radius << " " << x << " " << y << endl;
             }
         } else if (shapeType == "rectangle") {
             int x, y, width, height;
             ss >> x >> y >> width >> height;
 
             if (!isDuplicate) {
-                auto rectangle = make_shared<Rectangle>(id, x, y, width, height);
+                auto rectangle = make_shared<Rectangle>(id, colorChar, fill, x, y, width, height);
                 board.addShape(rectangle);
-                cout << "Rectangle added." << endl;
+                cout << id << " rectangle " << color << " " << width << " " << height << " " << x << " " << y << endl;
             }
         } else if (shapeType == "square") {
             int x, y, sideLength;
             ss >> x >> y >> sideLength;
 
             if (!isDuplicate) {
-                auto square = make_shared<Square>(id, x, y, sideLength);
+                auto square = make_shared<Square>(id, colorChar, fill, x, y, sideLength);
                 board.addShape(square);
-                cout << "Square added." << endl;
+                cout << id << " square " << color << " " << sideLength << " " << x << " " << y << endl;
             }
         } else {
             cout << "Invalid shape type!" << endl;
@@ -454,15 +522,16 @@ private:
 
             while (getline(inFile, line)) {
                 istringstream iss(line);
-                string shapeType, id;
+                string shapeType, id, color;
+                bool fill;
                 int x, y, size1, size2;
 
-                iss >> id >> shapeType;
+                iss >> id >> shapeType >> color >> fill;
 
                 if (shapeType == "triangle") {
                     iss >> x >> y >> size1;
                     if (!iss.fail()) {
-                        auto triangle = make_shared<Triangle>(id, x, y, size1);
+                        auto triangle = make_shared<Triangle>(id, color[0], fill, x, y, size1);
                         board.addShape(triangle);
                     } else {
                         cout << "Error parsing triangle: " << line << endl;
@@ -470,7 +539,7 @@ private:
                 } else if (shapeType == "circle") {
                     iss >> x >> y >> size1;
                     if (!iss.fail()) {
-                        auto circle = make_shared<Circle>(id, x, y, size1);
+                        auto circle = make_shared<Circle>(id, color[0], fill, x, y, size1);
                         board.addShape(circle);
                     } else {
                         cout << "Error parsing circle: " << line << endl;
@@ -478,7 +547,7 @@ private:
                 } else if (shapeType == "rectangle") {
                     iss >> x >> y >> size1 >> size2;
                     if (!iss.fail()) {
-                        auto rectangle = make_shared<Rectangle>(id, x, y, size1, size2);
+                        auto rectangle = make_shared<Rectangle>(id, color[0], fill, x, y, size1, size2);
                         board.addShape(rectangle);
                     } else {
                         cout << "Error parsing rectangle: " << line << endl;
@@ -486,7 +555,7 @@ private:
                 } else if (shapeType == "square") {
                     iss >> x >> y >> size1;
                     if (!iss.fail()) {
-                        auto square = make_shared<Square>(id, x, y, size1);
+                        auto square = make_shared<Square>(id, color[0], fill, x, y, size1);
                         board.addShape(square);
                     } else {
                         cout << "Error parsing square: " << line << endl;
@@ -503,7 +572,6 @@ private:
         }
     }
 
-private:
     void select(stringstream &ss) {
         string idOrCoord;
         ss >> idOrCoord;
@@ -516,6 +584,10 @@ private:
         else {
             board.selectById(idOrCoord);
         }
+    }
+
+    void remove() {
+        board.removeSelectedShape();
     }
 };
 
