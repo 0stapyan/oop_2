@@ -33,6 +33,7 @@ public:
     virtual bool containsPoint(int x, int y) const = 0;
     virtual bool edit(const vector<int>& parames) = 0;
     void paint(char newColor) { color = newColor; }
+    virtual bool move(int newX, int newY) = 0;
 };
 
 class Board{
@@ -196,6 +197,17 @@ public:
         cout << "size of triangle changed" << endl;
         return true;
     }
+
+    bool move(int newX, int newY) override {
+        if (newX - height + 1 < 0 || newX + height - 1 >= BOARD_WIDTH || newY + height - 1 >= BOARD_HEIGHT) {
+            cout << "error: shape will go out of the board" << endl;
+            return false;
+        }
+
+        x = newX;
+        y = newY;
+        return true;
+    }
 };
 
 class Circle : public Shape{
@@ -281,6 +293,17 @@ public:
         cout << "size of circle changed" << endl;
         return true;
     }
+
+    bool move(int newX, int newY) override {
+        if (newX - radius < 0 || newX + radius >= BOARD_WIDTH || newY - radius < 0 || newY + radius >= BOARD_HEIGHT) {
+            cout << "error: shape will go out of the board" << endl;
+            return false;
+        }
+
+        x = newX;
+        y = newY;
+        return true;
+    }
 };
 
 class Rectangle : public Shape{
@@ -360,6 +383,17 @@ public:
         cout << "size of rectangle changed" << endl;
         return true;
     }
+
+    bool move(int newX, int newY) override {
+        if (newX + width > BOARD_WIDTH || newY + height > BOARD_HEIGHT) {
+            cout << "error: shape will go out of the board" << endl;
+            return false;
+        }
+
+        x = newX;
+        y = newY;
+        return true;
+    }
 };
 
 class Square : public Shape {
@@ -436,6 +470,17 @@ public:
         sideLength = newSideLength;
         cout << "size of square changed" << endl;
     }
+
+    bool move(int newX, int newY) override {
+        if (newX + sideLength > BOARD_WIDTH || newY + sideLength > BOARD_HEIGHT) {
+            cout << "error: shape will go out of the board" << endl;
+            return false;
+        }
+
+        x = newX;
+        y = newY;
+        return true;
+    }
 };
 
 class UserInterface {
@@ -458,7 +503,8 @@ public:
                 "10. remove\n"
                 "11. edit\n"
                 "12. paint\n"
-                "13. exit\n""" << endl;
+                "13. move\n"
+                "14. exit\n""" << endl;
 
         while (true) {
             cout << ">";
@@ -496,6 +542,8 @@ public:
                 edit(ss);
             } else if (cmd == "paint") {
                 paint(ss);
+            } else if (cmd == "move") {
+                move(ss);
             } else if (cmd == "exit") {
                 return;
             } else {
@@ -709,6 +757,24 @@ private:
         char colorChar = color[0];
         selectedShape->paint(colorChar);
         cout << selectedShape->getId() << " " << selectedShape->getDescription() << "painted" << color << endl;
+    }
+
+    void move(stringstream &ss) {
+        int newX, newY;
+        ss >> newX >> newY;
+
+        auto selectedShape = board.getSelectedShape();
+        if (!selectedShape) {
+            cout << "No shape selected to move." << endl;
+            return;
+        }
+
+        if (selectedShape->move(newX, newY)) {
+            auto& shapes = board.getShapes();
+            shapes.erase(std::remove(shapes.begin(), shapes.end(), selectedShape), shapes.end());
+            shapes.push_back(selectedShape);
+            cout << selectedShape->getId() << " " << selectedShape->getDescription() << " moved" << endl;
+        }
     }
 };
 
