@@ -18,6 +18,22 @@ string getColorName(char color) {
     }
 }
 
+string getColorCode(char color) {
+    switch (color) {
+        case 'r': return "\033[31m"; // Red
+        case 'g': return "\033[32m"; // Green
+        case 'b': return "\033[34m"; // Blue
+        case 'y': return "\033[33m"; // Yellow
+        case 'm': return "\033[35m"; // Magenta
+        case 'c': return "\033[36m"; // Cyan
+        default: return "\033[0m";   // Reset
+    }
+}
+
+string resetColor() {
+    return "\033[0m"; // Reset to default color
+}
+
 class Shape{
 protected:
     string id;
@@ -67,7 +83,11 @@ public:
         for (int row = 0; row < BOARD_HEIGHT; ++row) {
             cout << "|";
             for (int col = 0; col < BOARD_WIDTH; ++col) {
-                cout << grid[row][col];
+                if (grid[row][col] != ' ') {
+                    cout << getColorCode(grid[row][col]) << grid[row][col] << resetColor();
+                } else {
+                    cout << grid[row][col];
+                }
             }
             cout << "|" << endl;
         }
@@ -133,6 +153,8 @@ public:
     Triangle(string id, char color, bool fill, int x, int y, int height) : Shape(id, color, fill), x(x), y(y), height(height) {}
 
     void draw(vector<vector<char>>& grid) const override {
+        string colorCode = getColorCode(color);
+        string reset = resetColor();
         if (height <= 0) return;
 
         for (int i = 0; i < height; i++) {
@@ -168,6 +190,17 @@ public:
                     }
                 }
             }
+        }
+        for (int row = 0; row < BOARD_HEIGHT; ++row) {
+            cout << "|";
+            for (int col = 0; col < BOARD_WIDTH; ++col) {
+                if (grid[row][col] == color) {
+                    cout << colorCode << grid[row][col] << reset;
+                } else {
+                    cout << grid[row][col];
+                }
+            }
+            cout << "|" << endl;
         }
     }
 
@@ -218,6 +251,9 @@ public:
     Circle(string id, char color, bool fill, int x, int y, int radius) : Shape(id, color, fill), x(x), y(y), radius(radius) {}
 
     void draw(vector<vector<char>>& grid) const override {
+        string colorCode = getColorCode(color);
+        string reset = resetColor();
+
         int x0 = x;
         int y0 = y;
 
@@ -264,6 +300,18 @@ public:
                     }
                 }
             }
+        }
+
+        for (int row = 0; row < BOARD_HEIGHT; ++row) {
+            cout << "|";
+            for (int col = 0; col < BOARD_WIDTH; ++col) {
+                if (grid[row][col] == color) {
+                    cout << colorCode << grid[row][col] << reset;
+                } else {
+                    cout << grid[row][col];
+                }
+            }
+            cout << "|" << endl;
         }
     }
 
@@ -314,6 +362,9 @@ public:
     Rectangle(string id, char color, bool fill, int x, int y, int width, int height) : Shape(id, color, fill), x(x), y(y), width(width), height(height) {}
 
     void draw(vector<vector<char>>& grid) const override {
+        string colorCode = getColorCode(color);
+        string reset = resetColor();
+
         for (int i = 0; i < width; i++) {
             int topX = x + i;
             int topY = y;
@@ -354,6 +405,18 @@ public:
                     }
                 }
             }
+        }
+
+        for (int row = 0; row < BOARD_HEIGHT; ++row) {
+            cout << "|";
+            for (int col = 0; col < BOARD_WIDTH; ++col) {
+                if (grid[row][col] == color) {
+                    cout << colorCode << grid[row][col] << reset;
+                } else {
+                    cout << grid[row][col];
+                }
+            }
+            cout << "|" << endl;
         }
     }
 
@@ -404,6 +467,9 @@ public:
     Square(string id, char color, bool fill, int x, int y, int sideLength) : Shape(id, color, fill), x(x), y(y), sideLength(sideLength) {}
 
     void draw(vector<vector<char>>& grid) const override {
+        string colorCode = getColorCode(color);
+        string reset = resetColor();
+
         for (int i = 0; i < sideLength; ++i) {
             int topX = x + i;
             int topY = y;
@@ -444,6 +510,18 @@ public:
                     }
                 }
             }
+        }
+
+        for (int row = 0; row < BOARD_HEIGHT; ++row) {
+            cout << "|";
+            for (int col = 0; col < BOARD_WIDTH; ++col) {
+                if (grid[row][col] == color) {
+                    cout << colorCode << grid[row][col] << reset;
+                } else {
+                    cout << grid[row][col];
+                }
+            }
+            cout << "|" << endl;
         }
     }
 
